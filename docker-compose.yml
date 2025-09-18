@@ -57,6 +57,18 @@ services:
     networks:
       - oss_network
 
+# Adminer GUI
+  adminer:
+    image: adminer:latest
+    container_name: oss_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080" # Maps local port 8080 to Adminer's port
+    depends_on:
+      - postgres
+    networks:
+      - oss_network
+
 volumes:
   postgres_data:
 

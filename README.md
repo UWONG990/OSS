@@ -71,7 +71,7 @@ docker-compose exec frontend npm install
 
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8000
-- **Database**: localhost:5432
+- **Database**: [localhost:8080](http://localhost:8080)
 
 ### Default Admin Credentials
 
