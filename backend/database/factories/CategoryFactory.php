@@ -16,12 +16,12 @@ class CategoryFactory extends Factory
      */
     public function definition(): array
     {
-        $name = $this->faker->words(2, true);
+        $name = $this->faker->unique()->sentence(2); // Generate a unique name first
         return [
             'name' => $name,
-            'description' => $this->faker->sentence(),
-            'slug' => \Illuminate\Support\Str::slug($name),
-            'is_active' => $this->faker->boolean(90),
+            'description' => $this->faker->paragraph,
+            'slug' => \Illuminate\Support\Str::slug($name), // Generate slug from the unique name
+            'is_active' => $this->faker->boolean(80),
         ];
     }
 }
