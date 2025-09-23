@@ -54,7 +54,10 @@ class ProductController extends Controller
             $query->orderBy($sortBy, $sortDirection);
         }
 
-        $products = $query->paginate(12);
+        $perPage = $request->get('per_page', 12);
+        $perPage = min($perPage, 50); // Limit max items per page to 50
+        
+        $products = $query->paginate($perPage);
 
         return response()->json($products);
     }

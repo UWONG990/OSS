@@ -6,10 +6,16 @@ import './Auth.css';
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
-    phone: ''
+    phone: '',
+    dateOfBirth: '',
+    gender: '',
+    address: '',
+    city: '',
+    paypalId: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -24,7 +30,7 @@ const Register: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -37,13 +43,15 @@ const Register: React.FC = () => {
     setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Password and retype password do not match');
       setLoading(false);
       return;
     }
 
     try {
       await register(formData.name, formData.email, formData.password, formData.phone);
+      // Note: Additional fields (username, dateOfBirth, gender, address, city, paypalId) 
+      // will need to be handled by updating the backend API and AuthContext
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
@@ -67,6 +75,19 @@ const Register: React.FC = () => {
               id="name"
               name="name"
               value={formData.name}
+              onChange={handleInputChange}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
               onChange={handleInputChange}
               required
               disabled={loading}
@@ -97,6 +118,77 @@ const Register: React.FC = () => {
               disabled={loading}
             />
           </div>
+
+          <div className="form-group">
+            <label htmlFor="dateOfBirth">Date of Birth</label>
+            <input
+              type="date"
+              id="dateOfBirth"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
+              onChange={handleInputChange}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="gender">Gender</label>
+            <select
+              id="gender"
+              name="gender"
+              value={formData.gender}
+              onChange={handleInputChange}
+              required
+              disabled={loading}
+            >
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+              <option value="prefer-not-to-say">Prefer not to say</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="address">Address</label>
+            <input
+              type="text"
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              required
+              disabled={loading}
+              placeholder="Enter your full address"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="city">City</label>
+            <input
+              type="text"
+              id="city"
+              name="city"
+              value={formData.city}
+              onChange={handleInputChange}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="paypalId">PayPal ID (Optional)</label>
+            <input
+              type="email"
+              id="paypalId"
+              name="paypalId"
+              value={formData.paypalId}
+              onChange={handleInputChange}
+              disabled={loading}
+              placeholder="your.paypal@email.com"
+            />
+          </div>
           
           <div className="form-group">
             <label htmlFor="password">Password</label>
@@ -111,7 +203,7 @@ const Register: React.FC = () => {
               minLength={8}
             />
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirm Password</label>
             <input
