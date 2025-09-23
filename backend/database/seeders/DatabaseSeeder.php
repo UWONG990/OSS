@@ -59,6 +59,10 @@ class DatabaseSeeder extends Seeder
             'category_id' => $electronics->id,
             'is_active' => true,
             'is_featured' => true,
+            'images' => [
+                'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500',
+                'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500'
+            ],
         ]);
 
         Product::create([
@@ -71,6 +75,10 @@ class DatabaseSeeder extends Seeder
             'category_id' => $electronics->id,
             'is_active' => true,
             'is_featured' => true,
+            'images' => [
+                'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500',
+                'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=500'
+            ],
         ]);
 
         Product::create([
@@ -82,6 +90,10 @@ class DatabaseSeeder extends Seeder
             'sku' => 'NIKE001',
             'category_id' => $clothing->id,
             'is_active' => true,
+            'images' => [
+                'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500',
+                'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=500'
+            ],
         ]);
 
         Product::create([
@@ -93,6 +105,10 @@ class DatabaseSeeder extends Seeder
             'sku' => 'BOOK001',
             'category_id' => $books->id,
             'is_active' => true,
+            'images' => [
+                'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=500',
+                'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500'
+            ],
         ]);
 
         // Create more products using factories

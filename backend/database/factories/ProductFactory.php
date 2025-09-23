@@ -17,6 +17,9 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         $name = $this->faker->words(3, true);
+        $imageCategories = ['tech', 'fashion', 'food', 'nature', 'business', 'abstract'];
+        $randomCategory = $this->faker->randomElement($imageCategories);
+        
         return [
             'name' => $name,
             'description' => $this->faker->paragraph(3),
@@ -29,6 +32,10 @@ class ProductFactory extends Factory
             'is_featured' => $this->faker->boolean(20),
             'weight' => $this->faker->randomFloat(2, 0.1, 10),
             'dimensions' => $this->faker->randomFloat(1, 5, 50) . 'x' . $this->faker->randomFloat(1, 5, 50) . 'x' . $this->faker->randomFloat(1, 5, 50),
+            'images' => [
+                "https://picsum.photos/500/400?random=" . $this->faker->numberBetween(1, 1000),
+                "https://picsum.photos/500/400?random=" . $this->faker->numberBetween(1001, 2000),
+            ],
         ];
     }
 }
