@@ -10,7 +10,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ShopController;
 
 Route::get('/user', function (Request $request) {
-    return $request->user()->load('shop');
+    return $request->user();
 })->middleware('auth:sanctum');
 
 // Public routes
@@ -40,18 +40,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     
-    // Shop routes (for sellers)
+    // Shop routes
     Route::post('/shop/request', [ShopController::class, 'requestShop']);
     Route::get('/shop/my-shop', [ShopController::class, 'getMyShop']);
     Route::put('/shop/update', [ShopController::class, 'updateShop']);
-    
-    // Seller product management routes
-    Route::prefix('seller')->middleware('seller')->group(function () {
-        Route::get('/products', [ProductController::class, 'sellerProducts']);
-        Route::post('/products', [ProductController::class, 'sellerStore']);
-        Route::put('/products/{product}', [ProductController::class, 'sellerUpdate']);
-        Route::delete('/products/{product}', [ProductController::class, 'sellerDestroy']);
-    });
     
     // Admin routes
     Route::middleware('admin')->group(function () {

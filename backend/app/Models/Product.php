@@ -19,6 +19,7 @@ class Product extends Model
         'sku',
         'images',
         'category_id',
+        'shop_id',
         'is_active',
         'is_featured',
         'weight',
@@ -42,6 +43,14 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Get the shop that owns the product
+     */
+    public function shop()
+    {
+        return $this->belongsTo(Shop::class);
     }
 
     /**

@@ -47,5 +47,16 @@ export const authService = {
   isAdmin(): boolean {
     const user = this.getCurrentUser();
     return user?.role === 'admin';
+  },
+
+  async refreshUser(): Promise<User | null> {
+    try {
+      const response = await api.get('/user');
+      const user = response.data;
+      localStorage.setItem('user', JSON.stringify(user));
+      return user;
+    } catch (error) {
+      return null;
+    }
   }
 };

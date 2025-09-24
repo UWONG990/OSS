@@ -23,13 +23,26 @@ const Navbar: React.FC = () => {
           
           {isAuthenticated ? (
             <>
-              <Link to="/cart" className="navbar-item">Cart</Link>
-              <Link to="/orders" className="navbar-item">Orders</Link>
+              {!isAdmin && (
+                <>
+                  <Link to="/cart" className="navbar-item">Cart</Link>
+                  <Link to="/orders" className="navbar-item">Orders</Link>
+                </>
+              )}
+              {user?.user_type === 'seller' && !isAdmin && (
+                <>
+                  {user.shop && user.shop.status === 'approved' ? (
+                    <Link to="/seller-dashboard" className="navbar-item seller-link">My Shop</Link>
+                  ) : (
+                    <Link to="/shop-request" className="navbar-item seller-link">Request Shop</Link>
+                  )}
+                </>
+              )}
               {isAdmin && (
                 <Link to="/admin" className="navbar-item admin-link">Admin</Link>
               )}
               <div className="navbar-user">
-                <span>Welcome, {user?.name}</span>
+                <span>Welcome, {user?.name} {isAdmin ? '(admin)' : `(${user?.user_type})`}</span>
                 <button onClick={handleLogout} className="logout-btn">
                   Logout
                 </button>

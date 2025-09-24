@@ -10,6 +10,8 @@ import Register from './pages/Register';
 import Cart from './pages/Cart';
 import Orders from './pages/Orders';
 import AdminDashboard from './pages/AdminDashboard';
+import ShopRequest from './pages/ShopRequest';
+import SellerDashboard from './pages/SellerDashboard';
 import { authService } from './services/auth';
 import './App.css';
 
@@ -66,6 +68,22 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute adminOnly>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/shop-request" 
+                element={
+                  <ProtectedRoute>
+                    <ShopRequest />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/seller-dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <SellerDashboard />
                   </ProtectedRoute>
                 } 
               />

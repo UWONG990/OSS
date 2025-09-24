@@ -5,8 +5,9 @@ import { authService } from '../services/auth';
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, phone?: string) => Promise<void>;
+  register: (formData: any) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;
   loading: boolean;
@@ -31,10 +32,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const currentUser = authService.getCurrentUser();
-    setUser(currentUser);
-    setLoading(false);
+    const loadUser = async () => {
+      // Check if user is already logged in
+      const currentUser = authService.getCurrentUser();
+      if (currentUser && authService.isAuthenticated()) {
+        // Refresh user data to get latest shop information
+        const updatedUser = await authService.refreshUser();
+        setUser(updatedUser || currentUser);
+      } else {
+        setUser(currentUser);
+      }
+      setLoading(false);
+    };
+    
+    loadUser();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -46,14 +57,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (name: string, email: string, password: string, phone?: string) => {
+  const register = async (formData: any) => {
     try {
       const response = await authService.register({ 
-        name, 
-        email, 
-        password, 
-        password_confirmation: password,
-        phone 
+        name: formData.name,
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        user_type: formData.userType,
+        date_of_birth: formData.dateOfBirth,
+        gender: formData.gender,
+        address: formData.address,
+        city: formData.city,
+        paypal_id: formData.paypalId
       });
       setUser(response.user);
     } catch (error) {
@@ -66,11 +83,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const updatedUser = await authService.refreshUser();
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     login,
     register,
     logout,
+    refreshUser,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',
     loading,

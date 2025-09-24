@@ -25,6 +25,8 @@ export interface Product {
   images?: string[];
   category_id: number;
   category?: Category;
+  shop_id?: number;
+  shop?: Shop;
   is_active: boolean;
   is_featured: boolean;
   weight?: string;
@@ -37,10 +39,17 @@ export interface Product {
 export interface User {
   id: number;
   name: string;
+  username: string;
   email: string;
   role: 'admin' | 'customer';
+  user_type: 'buyer' | 'seller';
   phone?: string;
+  date_of_birth?: string;
+  gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
   address?: any;
+  city?: string;
+  paypal_id?: string;
+  shop?: Shop;
   is_active: boolean;
   email_verified_at?: string;
   created_at: string;
@@ -60,10 +69,33 @@ export interface LoginRequest {
 
 export interface RegisterRequest {
   name: string;
+  username: string;
   email: string;
   password: string;
-  password_confirmation: string;
   phone?: string;
+  user_type: 'buyer' | 'seller';
+  date_of_birth: string;
+  gender: 'male' | 'female' | 'other' | 'prefer-not-to-say';
+  address: string;
+  city: string;
+  paypal_id?: string;
+}
+
+// Shop interfaces
+export interface Shop {
+  id: number;
+  name: string;
+  description: string;
+  owner_id: number;
+  owner?: User;
+  status: 'pending' | 'approved';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShopRequest {
+  name: string;
+  description: string;
 }
 
 // Cart interfaces

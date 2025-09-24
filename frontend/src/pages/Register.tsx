@@ -9,8 +9,9 @@ const Register: React.FC = () => {
     username: '',
     email: '',
     password: '',
-    confirmPassword: '',
+    retypePassword: '',
     phone: '',
+    userType: 'buyer',
     dateOfBirth: '',
     gender: '',
     address: '',
@@ -42,16 +43,14 @@ const Register: React.FC = () => {
     setLoading(true);
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== formData.retypePassword) {
       setError('Password and retype password do not match');
       setLoading(false);
       return;
     }
 
     try {
-      await register(formData.name, formData.email, formData.password, formData.phone);
-      // Note: Additional fields (username, dateOfBirth, gender, address, city, paypalId) 
-      // will need to be handled by updating the backend API and AuthContext
+      await register(formData);
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
@@ -105,6 +104,21 @@ const Register: React.FC = () => {
               required
               disabled={loading}
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="userType">I want to</label>
+            <select
+              id="userType"
+              name="userType"
+              value={formData.userType}
+              onChange={handleInputChange}
+              required
+              disabled={loading}
+            >
+              <option value="buyer">Buy products only</option>
+              <option value="seller">Buy and sell products (requires shop approval)</option>
+            </select>
           </div>
           
           <div className="form-group">
@@ -205,12 +219,12 @@ const Register: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="retypePassword">Retype Password</label>
             <input
               type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
+              id="retypePassword"
+              name="retypePassword"
+              value={formData.retypePassword}
               onChange={handleInputChange}
               required
               disabled={loading}

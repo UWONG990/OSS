@@ -10,7 +10,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with('category')->active();
+        $query = Product::with(['category', 'shop.owner'])->active();
 
         // Search functionality
         if ($request->has('search')) {
@@ -64,7 +64,7 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        $product->load('category');
+        $product->load(['category', 'shop.owner']);
         return response()->json($product);
     }
 
@@ -142,6 +142,139 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        $product->delete();
+
+        return response()->json([
+            'message' => 'Product deleted successfully'
+        ]);
+    }
+
+    // Seller-specific methods
+
+    /**
+     * Get products for the authenticated seller's shop
+     */
+    public function sellerProducts(Request $request)
+    {
+        $user = $request->user();
+        $shop = $user->shop;
+
+        $products = Product::with('category')
+            ->where('shop_id', $shop->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($products);
+    }
+
+    /**
+     * Store a new product for the authenticated seller's shop
+     */
+    public function sellerStore(Request $request)
+    {
+        $user = $request->user();
+        $shop = $user->shop;
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'price' => 'required|numeric|min:0',
+            'quantity' => 'required|integer|min:0',
+            'category_id' => 'required|exists:categories,id',
+            'images' => 'nullable|array',
+            'weight' => 'nullable|numeric|min:0',
+            'dimensions' => 'nullable|string',
+        ]);
+
+        // Generate unique SKU
+        $sku = 'SHOP' . $shop->id . '-' . strtoupper(Str::random(8));
+
+        $product = Product::create([
+            'name' => $request->name,
+            'description' => $request->description,
+            'slug' => Str::slug($request->name . '-' . $sku),
+            'price' => $request->price,
+            'quantity' => $request->quantity,
+            'sku' => $sku,
+            'category_id' => $request->category_id,
+            'shop_id' => $shop->id,
+            'images' => $request->images ?? [],
+            'is_active' => true,
+            'is_featured' => false,
+            'weight' => $request->weight,
+            'dimensions' => $request->dimensions,
+        ]);
+
+        $product->load(['category', 'shop']);
+
+        return response()->json([
+            'message' => 'Product created successfully',
+            'product' => $product
+        ], 201);
+    }
+
+    /**
+     * Update a product for the authenticated seller's shop
+     */
+    public function sellerUpdate(Request $request, Product $product)
+    {
+        $user = $request->user();
+        $shop = $user->shop;
+
+        // Ensure the product belongs to the seller's shop
+        if ($product->shop_id !== $shop->id) {
+            return response()->json([
+                'message' => 'You can only update your own products'
+            ], 403);
+        }
+
+        $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+            'price' => 'sometimes|required|numeric|min:0',
+            'quantity' => 'sometimes|required|integer|min:0',
+            'category_id' => 'sometimes|required|exists:categories,id',
+            'images' => 'nullable|array',
+            'is_active' => 'boolean',
+            'is_featured' => 'boolean',
+            'weight' => 'nullable|numeric|min:0',
+            'dimensions' => 'nullable|string',
+        ]);
+
+        $updateData = $request->only([
+            'name', 'description', 'price', 'quantity', 
+            'category_id', 'images', 'is_active', 'is_featured',
+            'weight', 'dimensions'
+        ]);
+
+        if (isset($updateData['name'])) {
+            $updateData['slug'] = Str::slug($updateData['name'] . '-' . $product->sku);
+        }
+
+        $product->update($updateData);
+        $product->load(['category', 'shop']);
+
+        return response()->json([
+            'message' => 'Product updated successfully',
+            'product' => $product
+        ]);
+    }
+
+    /**
+     * Delete a product for the authenticated seller's shop
+     */
+    public function sellerDestroy(Request $request, Product $product)
+    {
+        $user = $request->user();
+        $shop = $user->shop;
+
+        // Ensure the product belongs to the seller's shop
+        if ($product->shop_id !== $shop->id) {
+            return response()->json([
+                'message' => 'You can only delete your own products'
+            ], 403);
+        }
+
         $product->delete();
 
         return response()->json([

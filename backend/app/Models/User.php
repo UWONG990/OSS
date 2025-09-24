@@ -20,11 +20,17 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
         'role',
+        'user_type',
         'phone',
+        'date_of_birth',
+        'gender',
         'address',
+        'city',
+        'paypal_id',
         'is_active',
     ];
 
@@ -50,6 +56,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'address' => 'array',
             'is_active' => 'boolean',
+            'date_of_birth' => 'date',
         ];
     }
 
@@ -59,6 +66,38 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is a buyer
+     */
+    public function isBuyer(): bool
+    {
+        return $this->user_type === 'buyer';
+    }
+
+    /**
+     * Check if user is a seller
+     */
+    public function isSeller(): bool
+    {
+        return $this->user_type === 'seller';
+    }
+
+    /**
+     * Get the user's shop (for sellers)
+     */
+    public function shop()
+    {
+        return $this->hasOne(Shop::class, 'owner_id');
+    }
+
+    /**
+     * Check if seller has an approved shop
+     */
+    public function hasApprovedShop(): bool
+    {
+        return $this->shop && $this->shop->isApproved();
     }
 
     /**

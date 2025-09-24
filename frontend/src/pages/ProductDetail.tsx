@@ -20,6 +20,17 @@ interface Product {
     name: string;
     slug: string;
   };
+  shop?: {
+    id: number;
+    name: string;
+    description: string;
+    status: string;
+    owner: {
+      id: number;
+      name: string;
+      email: string;
+    };
+  };
 }
 
 const ProductDetail: React.FC = () => {
@@ -257,6 +268,53 @@ const ProductDetail: React.FC = () => {
                   <strong>Dimensions:</strong> {JSON.stringify(product.dimensions)}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Shop Information */}
+          {product.shop && (
+            <div style={{ 
+              marginBottom: '20px', 
+              padding: '15px', 
+              backgroundColor: '#f8f9fa', 
+              border: '1px solid #e9ecef',
+              borderRadius: '8px'
+            }}>
+              <h3 style={{ marginBottom: '10px', color: '#333' }}>Sold by</h3>
+              <div style={{ marginBottom: '8px' }}>
+                <strong style={{ fontSize: '18px', color: '#0066cc' }}>
+                  {product.shop.name}
+                </strong>
+              </div>
+              <div style={{ marginBottom: '8px', fontSize: '14px', color: '#666' }}>
+                {product.shop.description}
+              </div>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                <strong>Shop Owner:</strong> {product.shop.owner.name}
+              </div>
+              <div style={{ marginTop: '10px' }}>
+                <button
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#fff',
+                    border: '1px solid #0066cc',
+                    borderRadius: '4px',
+                    color: '#0066cc',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#0066cc';
+                    e.currentTarget.style.color = '#fff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#fff';
+                    e.currentTarget.style.color = '#0066cc';
+                  }}
+                >
+                  Visit Shop
+                </button>
+              </div>
             </div>
           )}
 

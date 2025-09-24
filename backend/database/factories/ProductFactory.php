@@ -28,6 +28,7 @@ class ProductFactory extends Factory
             'quantity' => $this->faker->numberBetween(0, 100),
             'sku' => strtoupper($this->faker->bothify('???###')),
             'category_id' => \App\Models\Category::factory(),
+            'shop_id' => null, // Will be set manually in seeder
             'is_active' => $this->faker->boolean(90),
             'is_featured' => $this->faker->boolean(20),
             'weight' => $this->faker->randomFloat(2, 0.1, 10),

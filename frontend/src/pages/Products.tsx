@@ -18,6 +18,17 @@ interface Product {
     name: string;
     slug: string;
   };
+  shop?: {
+    id: number;
+    name: string;
+    description: string;
+    status: string;
+    owner: {
+      id: number;
+      name: string;
+      email: string;
+    };
+  };
 }
 
 interface Category {
@@ -405,6 +416,14 @@ const Products: React.FC = () => {
                   {product.category?.name}
                 </span>
               </div>
+
+              {/* Shop Information */}
+              {product.shop && (
+                <div style={{ marginBottom: '10px', padding: '8px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '2px' }}>Sold by</div>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#333' }}>{product.shop.name}</div>
+                </div>
+              )}
               
               {/* This div will push the button to the bottom */}
               <div style={{ marginTop: 'auto' }}>
