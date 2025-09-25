@@ -13,17 +13,40 @@ const ShopRequest: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if not a seller
+  // Refresh user data and check shop status
   React.useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    if (user.user_type !== 'seller') {
-      navigate('/');
+    const checkUserStatus = async () => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      if (user.user_type !== 'seller') {
+        navigate('/');
+        return;
+      }
+
+      // Refresh user data to get latest shop information
+      await refreshUser();
+    };
+
+    checkUserStatus();
+  }, []);
+
+  // Separate effect to handle shop redirection after user data is refreshed
+  React.useEffect(() => {
+    if (!user || user.user_type !== 'seller') return;
+
+    // If user already has a shop, redirect based on shop status
+    if (user.shop) {
+      if (user.shop.status === 'approved') {
+        navigate('/seller-dashboard');
+      } else {
+        // Show message for pending/rejected shops instead of redirecting
+        setError('You already have a shop request or an existing shop');
+      }
       return;
     }
   }, [user, navigate]);

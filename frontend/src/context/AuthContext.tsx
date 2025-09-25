@@ -46,6 +46,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
     
     loadUser();
+
+    // Also refresh user data when window gains focus
+    const handleFocus = () => {
+      if (authService.isAuthenticated()) {
+        refreshUser();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const login = async (email: string, password: string) => {

@@ -181,13 +181,34 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
-            'images' => 'nullable|array',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max per image
             'weight' => 'nullable|numeric|min:0',
             'dimensions' => 'nullable|string',
         ]);
 
         // Generate unique SKU
         $sku = 'SHOP' . $shop->id . '-' . strtoupper(Str::random(8));
+
+        // Handle image uploads
+        $imageUrls = [];
+        
+        // Handle both array format (images[0], images[1]) and simple array (images)
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $index => $image) {
+                if ($index >= 5) break; // Limit to 5 images
+                
+                // Create a unique filename
+                $filename = $sku . '_' . time() . '_' . uniqid() . '_' . $index . '.' . $image->getClientOriginalExtension();
+                
+                // Store in public/storage/products directory
+                $path = $image->storeAs('products', $filename, 'public');
+                
+                if ($path) {
+                    // Create the full URL
+                    $imageUrls[] = asset('storage/' . $path);
+                }
+            }
+        }
 
         $product = Product::create([
             'name' => $request->name,
@@ -198,7 +219,7 @@ class ProductController extends Controller
             'sku' => $sku,
             'category_id' => $request->category_id,
             'shop_id' => $shop->id,
-            'images' => $request->images ?? [],
+            'images' => $imageUrls,
             'is_active' => true,
             'is_featured' => false,
             'weight' => $request->weight,

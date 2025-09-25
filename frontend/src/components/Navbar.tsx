@@ -1,10 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
 const Navbar: React.FC = () => {
-  const { user, logout, isAuthenticated, isAdmin } = useAuth();
+  const { user, logout, isAuthenticated, isAdmin, refreshUser } = useAuth();
+
+  // Refresh user data when navbar loads to ensure shop info is current
+  useEffect(() => {
+    if (isAuthenticated && user?.user_type === 'seller') {
+      refreshUser();
+    }
+  }, [isAuthenticated, refreshUser]);
 
   const handleLogout = () => {
     logout();
@@ -31,11 +38,14 @@ const Navbar: React.FC = () => {
               )}
               {user?.user_type === 'seller' && !isAdmin && (
                 <>
-                  {user.shop && user.shop.status === 'approved' ? (
-                    <Link to="/seller-dashboard" className="navbar-item seller-link">My Shop</Link>
-                  ) : (
-                    <Link to="/shop-request" className="navbar-item seller-link">Request Shop</Link>
-                  )}
+                  {(() => {
+                    console.log('User shop data:', user.shop); // Debug log
+                    return user.shop && user.shop.status === 'approved' ? (
+                      <Link to="/seller-dashboard" className="navbar-item seller-link">My Shop</Link>
+                    ) : (
+                      <Link to="/shop-request" className="navbar-item seller-link">Request Shop</Link>
+                    );
+                  })()}
                 </>
               )}
               {isAdmin && (

@@ -24,6 +24,8 @@ const SellerDashboard: React.FC = () => {
     quantity: '',
     category_id: '1'
   });
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -49,19 +51,144 @@ const SellerDashboard: React.FC = () => {
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+
     try {
-      await api.post('/seller/products', {
-        ...newProduct,
-        price: parseFloat(newProduct.price),
-        quantity: parseInt(newProduct.quantity)
-      });
+      // Validate required fields
+      if (!newProduct.name.trim()) {
+        throw new Error('Product name is required');
+      }
+      if (!newProduct.description.trim()) {
+        throw new Error('Product description is required');
+      }
+      if (!newProduct.price || parseFloat(newProduct.price) <= 0) {
+        throw new Error('Price must be greater than 0');
+      }
+      if (!newProduct.quantity || parseInt(newProduct.quantity) < 0) {
+        throw new Error('Quantity cannot be negative');
+      }
+
+      const formData = new FormData();
+      formData.append('name', newProduct.name.trim());
+      formData.append('description', newProduct.description.trim());
+      formData.append('price', newProduct.price);
+      formData.append('quantity', newProduct.quantity);
+      formData.append('category_id', newProduct.category_id);
       
+      // Add images to form data
+      selectedImages.forEach((image, index) => {
+        formData.append(`images[${index}]`, image);
+      });
+
+      console.log('Submitting product with', selectedImages.length, 'images');
+
+      // Use the correct endpoint
+      const response = await api.post('/seller/products', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log('Product created successfully:', response.data);
+      
+      // Reset form
       setShowAddProduct(false);
       setNewProduct({ name: '', description: '', price: '', quantity: '', category_id: '1' });
-      fetchProducts(); // Refresh the list
+      setSelectedImages([]);
+      setImagePreviewUrls([]);
+      setError('');
+      
+      // Refresh the products list
+      fetchProducts();
+      
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to add product');
+      console.error('Error creating product:', err);
+      
+      if (err.response?.data?.errors) {
+        // Handle validation errors from backend
+        const errors = err.response.data.errors;
+        const errorMessages = Object.values(errors).flat().join(', ');
+        setError(errorMessages);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Failed to add product. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const fileArray = Array.from(files);
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+    
+    let errorMessages = [];
+    
+    const validFiles = fileArray.filter(file => {
+      if (!allowedTypes.includes(file.type)) {
+        errorMessages.push(`${file.name}: Invalid file type. Only JPEG, PNG, JPG, GIF, and WebP are allowed.`);
+        return false;
+      }
+      if (file.size > maxFileSize) {
+        errorMessages.push(`${file.name}: File too large. Maximum size is 5MB.`);
+        return false;
+      }
+      return true;
+    });
+
+    // Check if adding these files would exceed the limit
+    const totalFiles = selectedImages.length + validFiles.length;
+    if (totalFiles > 5) {
+      const allowedFiles = validFiles.slice(0, 5 - selectedImages.length);
+      errorMessages.push(`Only ${allowedFiles.length} files were added. Maximum 5 images allowed.`);
+      setSelectedImages(prev => [...prev, ...allowedFiles]);
+      
+      // Create preview URLs for allowed files only
+      allowedFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            setImagePreviewUrls(prev => [...prev, e.target!.result as string]);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    } else {
+      setSelectedImages(prev => [...prev, ...validFiles]);
+      
+      // Create preview URLs
+      validFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            setImagePreviewUrls(prev => [...prev, e.target!.result as string]);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (errorMessages.length > 0) {
+      setError(errorMessages.join(' '));
+    } else {
+      setError(''); // Clear any previous errors
+    }
+
+    // Clear the input to allow selecting the same files again
+    e.target.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleToggleProduct = async (productId: number, isActive: boolean) => {
@@ -240,6 +367,72 @@ const SellerDashboard: React.FC = () => {
                     borderRadius: '4px'
                   }}
                 />
+              </div>
+
+              {/* Image Upload Section */}
+              <div style={{ marginBottom: '15px' }}>
+                <label>Product Images (Max 5):</label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    margin: '5px 0',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px'
+                  }}
+                />
+                
+                {/* Image Previews */}
+                {imagePreviewUrls.length > 0 && (
+                  <div style={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: '10px', 
+                    marginTop: '10px' 
+                  }}>
+                    {imagePreviewUrls.map((url, index) => (
+                      <div key={index} style={{ position: 'relative' }}>
+                        <img
+                          src={url}
+                          alt={`Preview ${index + 1}`}
+                          style={{
+                            width: '80px',
+                            height: '80px',
+                            objectFit: 'cover',
+                            borderRadius: '4px',
+                            border: '1px solid #ddd'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          style={{
+                            position: 'absolute',
+                            top: '-5px',
+                            right: '-5px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '20px',
+                            height: '20px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
