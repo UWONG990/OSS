@@ -17,8 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'seller' => \App\Http\Middleware\SellerMiddleware::class,
         ]);
         
-        // Add CORS headers
-        $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
+        // Add CORS middleware to API routes
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

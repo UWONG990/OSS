@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Products from './pages/Products';
@@ -8,6 +9,7 @@ import ProductDetail from './pages/ProductDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import AdminDashboard from './pages/AdminDashboard';
 import ShopRequest from './pages/ShopRequest';
@@ -37,10 +39,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <Router>
-        <div className="App">
-          <Navbar />
-          <main className="main-content">
+      <CartProvider>
+        <Router>
+          <div className="App">
+            <Navbar />
+            <main className="main-content">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/products" element={<Products />} />
@@ -52,6 +55,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <Cart />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/checkout" 
+                element={
+                  <ProtectedRoute>
+                    <Checkout />
                   </ProtectedRoute>
                 } 
               />
@@ -91,6 +102,7 @@ const App: React.FC = () => {
           </main>
         </div>
       </Router>
+      </CartProvider>
     </AuthProvider>
   );
 };

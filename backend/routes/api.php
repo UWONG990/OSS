@@ -39,6 +39,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
+    Route::get('/orders/{order}/invoice', [OrderController::class, 'generateInvoice']);
+    Route::post('/orders/payment', [OrderController::class, 'processPayment']);
+    
+    // Seller order routes
+    Route::get('/seller/orders', [OrderController::class, 'sellerOrders']);
     
     // Shop routes (for sellers)
     Route::post('/shop/request', [ShopController::class, 'requestShop']);
@@ -66,9 +71,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
         
         // Order management
-        Route::put('/orders/{order}', [OrderController::class, 'update']);
+        Route::put('/orders/{order}/status', [OrderController::class, 'updateStatus']);
         Route::get('/admin/orders', [OrderController::class, 'adminIndex']);
-        Route::get('/admin/dashboard', [OrderController::class, 'dashboard']);
+        Route::post('/orders/{order}/approve', [OrderController::class, 'approve']);
+        Route::post('/orders/{order}/reject', [OrderController::class, 'reject']);
         
         // Shop management (Admin only)
         Route::get('/admin/shop-requests', [ShopController::class, 'getShopRequests']);

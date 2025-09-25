@@ -47,15 +47,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     loadUser();
 
-    // Also refresh user data when window gains focus
-    const handleFocus = () => {
-      if (authService.isAuthenticated()) {
-        refreshUser();
-      }
-    };
+    // Temporarily disabled focus refresh to prevent infinite loop
+    // TODO: Re-enable after fixing API timeout issues
+    // const handleFocus = () => {
+    //   if (authService.isAuthenticated()) {
+    //     refreshUser();
+    //   }
+    // };
 
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    // window.addEventListener('focus', handleFocus);
+    // return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -99,6 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(updatedUser);
     } catch (error) {
       console.error('Failed to refresh user data:', error);
+      // Don't set user to null on refresh failure, keep existing user data
     }
   };
 

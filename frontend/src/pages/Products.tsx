@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 interface Product {
   id: number;
@@ -57,6 +59,8 @@ interface ProductsResponse {
 }
 
 const Products: React.FC = () => {
+  const { addToCart, getCartItem } = useCart();
+  const { isAuthenticated, isAdmin } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +139,21 @@ const Products: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     fetchProducts(page);
+  };
+
+  const handleAddToCart = (product: Product) => {
+    if (!isAuthenticated) {
+      alert('Please login to add items to cart');
+      return;
+    }
+    
+    if (isAdmin) {
+      alert('Admin users cannot purchase items');
+      return;
+    }
+
+    addToCart(product, 1);
+    alert(`${product.name} added to cart!`);
   };
 
   const renderPaginationButtons = () => {
@@ -455,20 +474,24 @@ const Products: React.FC = () => {
                 </div>
                 
                 <button
-                  disabled={product.quantity === 0}
+                  disabled={product.quantity === 0 || !isAuthenticated || isAdmin}
+                  onClick={() => handleAddToCart(product)}
                   style={{
                     width: '100%',
                     padding: '10px',
-                    backgroundColor: product.quantity > 0 ? '#0066cc' : '#ccc',
+                    backgroundColor: product.quantity > 0 && isAuthenticated && !isAdmin ? '#0066cc' : '#ccc',
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: product.quantity > 0 ? 'pointer' : 'not-allowed',
+                    cursor: product.quantity > 0 && isAuthenticated && !isAdmin ? 'pointer' : 'not-allowed',
                     fontSize: '14px',
                     fontWeight: 'bold'
                   }}
                 >
-                  {product.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
+                  {product.quantity === 0 ? 'Out of Stock' : 
+                   !isAuthenticated ? 'Login to Purchase' :
+                   isAdmin ? 'Admin Cannot Purchase' :
+                   getCartItem(product.id) ? `In Cart (${getCartItem(product.id)?.quantity})` : 'Add to Cart'}
                 </button>
               </div>
             </div>

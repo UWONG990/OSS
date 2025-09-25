@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import './Navbar.css';
 
 const Navbar: React.FC = () => {
   const { user, logout, isAuthenticated, isAdmin, refreshUser } = useAuth();
+  const { cart } = useCart();
 
   // Refresh user data when navbar loads to ensure shop info is current
   useEffect(() => {
@@ -32,7 +34,11 @@ const Navbar: React.FC = () => {
             <>
               {!isAdmin && (
                 <>
-                  <Link to="/cart" className="navbar-item">Cart</Link>
+                  <Link to="/cart" className="navbar-item">
+                    Cart {cart.itemCount > 0 && (
+                      <span className="cart-badge">{cart.itemCount}</span>
+                    )}
+                  </Link>
                   <Link to="/orders" className="navbar-item">Orders</Link>
                 </>
               )}
