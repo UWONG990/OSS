@@ -226,7 +226,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($order->orderItems as $index => $item)
+            @foreach($order->items as $index => $item)
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>

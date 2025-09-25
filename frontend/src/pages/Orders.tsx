@@ -39,7 +39,8 @@ interface Order {
   admin_notes?: string;
   created_at: string;
   updated_at: string;
-  orderItems: OrderItem[];
+  orderItems?: OrderItem[];
+  items?: OrderItem[];
 }
 
 const Orders: React.FC = () => {
@@ -75,9 +76,12 @@ const Orders: React.FC = () => {
       setLoading(true);
       const params = selectedStatus ? `?status=${selectedStatus}` : '';
       const response = await api.get(`/orders${params}`);
-      setOrders(response.data.data || response.data);
+      const ordersData = response.data.data || response.data;
+      // Ensure ordersData is an array
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch orders');
+      setOrders([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -283,11 +287,11 @@ const Orders: React.FC = () => {
               {/* Order Items */}
               <div style={{ padding: '20px' }}>
                 <h4 style={{ margin: '0 0 15px 0', color: '#333' }}>
-                  Items ({order.orderItems.length})
+                  Items ({(order.orderItems || order.items || []).length})
                 </h4>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {order.orderItems.map((item) => (
+                  {(order.orderItems || order.items || []).map((item) => (
                     <div
                       key={item.id}
                       style={{

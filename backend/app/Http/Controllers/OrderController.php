@@ -353,15 +353,14 @@ class OrderController extends Controller
             return response()->json(['message' => 'Invoice can only be generated for paid orders'], 422);
         }
 
-        $order->load(['orderItems.product.shop', 'user']);
+        $order->load(['items.product.shop', 'user']);
 
         try {
             $pdf = Pdf::loadView('invoices.order', compact('order'));
             
             return $pdf->download("invoice-{$order->order_number}.pdf");
         } catch (\Exception $e) {
-            Log::error('PDF generation failed: ' . $e->getMessage());
-            return response()->json(['message' => 'Failed to generate invoice'], 500);
+            return response()->json(['message' => 'Failed to generate invoice', 'error' => $e->getMessage()], 500);
         }
     }
 
