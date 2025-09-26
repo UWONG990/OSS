@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { cacheService, CACHE_KEYS, CACHE_TTL, clearUserCaches } from '../services/cache';
+import { formatCurrency } from '../utils/currency';
 
 // Add CSS for spinner animation
 const spinnerStyle = `
@@ -187,12 +188,7 @@ const Orders: React.FC = () => {
     return () => window.removeEventListener('refreshOrders', handleOrdersRefresh);
   }, [user?.id]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

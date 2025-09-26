@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Shop } from '../types';
 import api from '../services/api';
 import { cacheService, CACHE_KEYS, CACHE_TTL } from '../services/cache';
+import { formatCurrency } from '../utils/currency';
 
 // Add CSS for spinner animation
 const spinnerStyle = `
@@ -187,12 +188,7 @@ const AdminDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [activeTab]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

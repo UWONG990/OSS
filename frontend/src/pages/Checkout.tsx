@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { formatPrice } from '../utils/currency';
 
 interface ShippingInfo {
   firstName: string;
@@ -518,11 +519,11 @@ const Checkout: React.FC = () => {
               <div>
                 <div style={{ fontWeight: '500' }}>{item.name}</div>
                 <div style={{ fontSize: '14px', color: '#666' }}>
-                  Qty: {item.quantity} × ${item.price.toFixed(2)}
+                  Qty: {item.quantity} × {formatPrice(item.price)}
                 </div>
               </div>
               <div style={{ fontWeight: 'bold' }}>
-                ${(item.price * item.quantity).toFixed(2)}
+                {formatPrice(item.price * item.quantity)}
               </div>
             </div>
           ))}
@@ -537,7 +538,7 @@ const Checkout: React.FC = () => {
             fontSize: '18px'
           }}>
             <span>Total</span>
-            <span>${cart.total.toFixed(2)}</span>
+            <span>{formatPrice(cart.total)}</span>
           </div>
         </div>
       </div>

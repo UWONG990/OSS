@@ -4,6 +4,7 @@ import api from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { cacheService, CACHE_KEYS, CACHE_TTL } from '../services/cache';
+import { formatPrice } from '../utils/currency';
 
 interface Product {
   id: number;
@@ -277,7 +278,7 @@ const ProductDetail: React.FC = () => {
               fontWeight: 'bold', 
               color: '#0066cc' 
             }}>
-              ${parseFloat(product.price).toFixed(2)}
+              {formatPrice(product.price)}
             </span>
           </div>
 
@@ -409,7 +410,7 @@ const ProductDetail: React.FC = () => {
                   fontWeight: 'bold'
                 }}
               >
-                Add to Cart - ${(parseFloat(product.price) * quantity).toFixed(2)}
+                Add to Cart - {formatPrice(parseFloat(product.price) * quantity)}
               </button>
             </div>
           )}

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { cacheService, CACHE_KEYS, CACHE_TTL } from '../services/cache';
+import { formatPrice } from '../utils/currency';
 
 // Add CSS for spinner animation
 const spinnerStyle = `
@@ -558,7 +559,7 @@ const Products: React.FC = () => {
                     fontWeight: 'bold', 
                     color: '#0066cc' 
                   }}>
-                    ${parseFloat(product.price).toFixed(2)}
+                    {formatPrice(product.price)}
                   </span>
                   
                   <div style={{ fontSize: '12px', color: '#666' }}>

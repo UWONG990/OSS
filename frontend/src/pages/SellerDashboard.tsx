@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Product } from '../types';
 import api from '../services/api';
+import { formatCurrency, formatPrice } from '../utils/currency';
 
 interface ShopStats {
   totalProducts: number;
@@ -271,7 +272,7 @@ const SellerDashboard: React.FC = () => {
         </div>
         <div style={{ backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
           <h3 style={{ margin: '0 0 10px 0', color: '#6c757d' }}>Revenue</h3>
-          <p style={{ fontSize: '2em', margin: '0', fontWeight: 'bold' }}>${stats.revenue.toFixed(2)}</p>
+          <p style={{ fontSize: '2em', margin: '0', fontWeight: 'bold' }}>{formatCurrency(stats.revenue)}</p>
         </div>
       </div>
 
@@ -335,7 +336,7 @@ const SellerDashboard: React.FC = () => {
               </div>
               
               <div style={{ marginBottom: '15px' }}>
-                <label>Price ($):</label>
+                <label>Price (Rp):</label>
                 <input
                   type="number"
                   step="0.01"
@@ -492,7 +493,7 @@ const SellerDashboard: React.FC = () => {
                   <h3 style={{ margin: '0 0 10px 0' }}>{product.name}</h3>
                   <p style={{ margin: '0 0 10px 0', color: '#6c757d' }}>{product.description}</p>
                   <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                    <span><strong>Price:</strong> ${product.price}</span>
+                    <span><strong>Price:</strong> {formatPrice(product.price)}</span>
                     <span><strong>Stock:</strong> {product.quantity}</span>
                     <span style={{ 
                       color: product.is_active ? '#28a745' : '#dc3545',
