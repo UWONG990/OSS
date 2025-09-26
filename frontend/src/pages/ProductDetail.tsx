@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
+import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 interface Product {
   id: number;
@@ -36,6 +38,8 @@ interface Product {
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -49,7 +53,7 @@ const ProductDetail: React.FC = () => {
 
   const fetchProduct = async (productId: string) => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/products/${productId}`);
+      const response = await api.get(`/products/${productId}`);
       setProduct(response.data);
       setLoading(false);
     } catch (err) {
@@ -58,9 +62,39 @@ const ProductDetail: React.FC = () => {
     }
   };
 
-  const handleAddToCart = () => {
-    // TODO: Implement add to cart functionality
-    alert(`Added ${quantity} ${product?.name} to cart!`);
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      alert('Please log in to add items to cart');
+      navigate('/login');
+      return;
+    }
+
+    if (!product) {
+      alert('Product not available');
+      return;
+    }
+
+    if (quantity <= 0 || quantity > product.quantity) {
+      alert(`Please select a quantity between 1 and ${product.quantity}`);
+      return;
+    }
+
+    try {
+      await addToCart({
+        product_id: product.id,
+        name: product.name,
+        price: parseFloat(product.price),
+        quantity: quantity,
+        image: product.images?.[0] || '',
+        shop_id: product.shop?.id || 0,
+        shop_name: product.shop?.name || 'Unknown Shop'
+      });
+      
+      alert(`Added ${quantity} ${product.name} to cart!`);
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+      alert('Failed to add item to cart. Please try again.');
+    }
   };
 
   if (loading) {

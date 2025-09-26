@@ -348,6 +348,13 @@ const Products: React.FC = () => {
               flexDirection: 'column',
               height: '500px' // Fixed height for consistency
             }}
+            onClick={(e) => {
+              // Don't navigate if clicking on the Add to Cart button
+              if (e.target instanceof HTMLElement && e.target.closest('button')) {
+                return;
+              }
+              window.location.href = `/products/${product.id}`;
+            }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
