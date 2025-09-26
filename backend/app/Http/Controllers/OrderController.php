@@ -144,7 +144,8 @@ class OrderController extends Controller
             if ($paymentResult['success']) {
                 $order->update([
                     'payment_status' => 'completed',
-                    'status' => 'confirmed'
+                    'status' => 'pending', // Keep as pending for admin review
+                    'notes' => 'Payment completed. Awaiting admin approval.'
                 ]);
             } else {
                 $order->update([
@@ -170,7 +171,7 @@ class OrderController extends Controller
             }
 
             return response()->json([
-                'message' => 'Order placed successfully',
+                'message' => 'Order placed successfully! Payment completed. Your order is now pending admin approval.',
                 'order' => $order
             ], 201);
 
@@ -204,7 +205,7 @@ class OrderController extends Controller
             ], 403);
         }
 
-        $order->load(['orderItems.product.shop', 'orderItems.product.category', 'user']);
+        $order->load(['items.product.shop', 'items.product.category', 'user']);
 
         return response()->json($order);
     }
@@ -238,7 +239,7 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Order status updated successfully',
-            'order' => $order->load(['orderItems.product.shop', 'orderItems.product.category', 'user'])
+            'order' => $order->load(['items.product.shop', 'items.product.category', 'user'])
         ]);
     }
 
@@ -256,14 +257,14 @@ class OrderController extends Controller
             ], 403);
         }
 
-        $orders = Order::whereHas('orderItems.product', function ($query) use ($shop) {
+        $orders = Order::whereHas('items.product', function ($query) use ($shop) {
             $query->where('shop_id', $shop->id);
         })
-        ->with(['orderItems' => function ($query) use ($shop) {
+        ->with(['items' => function ($query) use ($shop) {
             $query->whereHas('product', function ($q) use ($shop) {
                 $q->where('shop_id', $shop->id);
             });
-        }, 'orderItems.product', 'user'])
+        }, 'items.product', 'user'])
         ->orderBy('created_at', 'desc')
         ->paginate(10);
 
@@ -329,7 +330,7 @@ class OrderController extends Controller
         }
 
         Log::info('Admin orders: Fetching orders');
-        $orders = Order::with(['orderItems.product.shop', 'orderItems.product.category', 'user'])
+        $orders = Order::with(['items.product.shop', 'items.product.category', 'user'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -388,7 +389,7 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Order approved successfully',
-            'order' => $order->load(['orderItems.product.shop', 'user'])
+            'order' => $order->load(['items.product.shop', 'user'])
         ]);
     }
 
@@ -413,7 +414,7 @@ class OrderController extends Controller
             DB::beginTransaction();
 
             // Restore product quantities
-            foreach ($order->orderItems as $item) {
+            foreach ($order->items as $item) {
                 $item->product->increment('quantity', $item->quantity);
             }
 
@@ -427,7 +428,7 @@ class OrderController extends Controller
 
             return response()->json([
                 'message' => 'Order rejected successfully',
-                'order' => $order->load(['orderItems.product.shop', 'user'])
+                'order' => $order->load(['items.product.shop', 'user'])
             ]);
 
         } catch (\Exception $e) {

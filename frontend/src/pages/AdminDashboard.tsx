@@ -368,21 +368,135 @@ const AdminDashboard: React.FC = () => {
                       marginTop: '15px'
                     }}>
                       <h4 style={{ margin: '0 0 10px 0', color: '#333' }}>
-                        Items ({order.orderItems?.length || 0})
+                        Items ({(order.orderItems || order.items)?.length || 0})
                       </h4>
-                      {order.orderItems?.slice(0, 3).map((item: any) => (
+                      {(order.orderItems || order.items)?.slice(0, 3).map((item: any) => {
+                        // Debug logging
+                        console.log('Item data:', item);
+                        console.log('Product data:', item.product);
+                        console.log('Images data:', item.product?.images);
+                        if (item.product?.images?.[0]) {
+                          const rawImage = item.product.images[0];
+                          const imageUrl = rawImage.startsWith('http') ? rawImage : `http://localhost:8000/storage/${rawImage}`;
+                          console.log('Raw image:', rawImage);
+                          console.log('Generated image URL:', imageUrl);
+                        }
+                        
+                        return (
                         <div key={item.id} style={{ 
-                          marginBottom: '5px',
+                          marginBottom: '10px',
                           display: 'flex',
-                          justifyContent: 'space-between'
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '8px',
+                          backgroundColor: '#fff',
+                          borderRadius: '8px',
+                          border: '1px solid #e9ecef'
                         }}>
-                          <span>{item.product_name} (x{item.quantity})</span>
-                          <span>{formatCurrency(item.total_price)}</span>
+                          {/* Product Image */}
+                          <div style={{ flexShrink: 0 }}>
+                            {item.product?.images?.[0] || item.product?.image ? (
+                              <>
+                                <img
+                                  src={(() => {
+                                    const rawImage = item.product.images?.[0] || item.product.image;
+                                    return rawImage?.startsWith('http') ? rawImage : `http://localhost:8000/storage/${rawImage}`;
+                                  })()}
+                                  alt={item.product_name}
+                                  style={{
+                                    width: '50px',
+                                    height: '50px',
+                                    objectFit: 'cover',
+                                    borderRadius: '6px',
+                                    border: '1px solid #dee2e6'
+                                  }}
+                                  onError={(e) => {
+                                    console.log('Failed to load image:', e.currentTarget.src);
+                                    e.currentTarget.style.display = 'none';
+                                    if (e.currentTarget.nextElementSibling) {
+                                      (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                                    }
+                                  }}
+                                />
+                                <div style={{
+                                  width: '50px',
+                                  height: '50px',
+                                  backgroundColor: '#f8f9fa',
+                                  borderRadius: '6px',
+                                  border: '1px solid #dee2e6',
+                                  display: 'none',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '10px',
+                                  color: '#6c757d'
+                                }}>
+                                  No Image
+                                </div>
+                              </>
+                            ) : (
+                              <div style={{
+                                width: '50px',
+                                height: '50px',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '6px',
+                                border: '1px solid #dee2e6',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '12px',
+                                color: '#6c757d'
+                              }}>
+                                No Image
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Product Details */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ 
+                              fontWeight: '500',
+                              fontSize: '14px',
+                              color: '#333',
+                              marginBottom: '2px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {item.product_name}
+                            </div>
+                            <div style={{ 
+                              fontSize: '12px',
+                              color: '#666'
+                            }}>
+                              SKU: {item.product_sku} • Qty: {item.quantity}
+                              {item.product?.shop && (
+                                <span> • by {item.product.shop.name}</span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Price */}
+                          <div style={{ 
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            color: '#007bff',
+                            textAlign: 'right'
+                          }}>
+                            {formatCurrency(item.total_price)}
+                            <div style={{
+                              fontSize: '11px',
+                              color: '#666',
+                              fontWeight: '400'
+                            }}>
+                              {formatCurrency(item.unit_price)} each
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                      {order.orderItems?.length > 3 && (
+                        );
+                      })}
+                      {(order.orderItems || order.items)?.length > 3 && (
                         <div style={{ color: '#666', fontSize: '14px', marginTop: '5px' }}>
-                          ... and {order.orderItems.length - 3} more items
+                          ... and {(order.orderItems || order.items).length - 3} more items
                         </div>
                       )}
                     </div>
