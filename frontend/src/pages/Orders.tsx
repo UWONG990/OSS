@@ -1,6 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { cacheService, CACHE_KEYS, CACHE_TTL, clearUserCaches } from '../services/cache';
+
+// Add CSS for spinner animation
+const spinnerStyle = `
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`;
+
+// Inject the CSS if not already added
+if (typeof document !== 'undefined') {
+  const existingStyle = document.querySelector('#orders-spinner-style');
+  if (!existingStyle) {
+    const style = document.createElement('style');
+    style.id = 'orders-spinner-style';
+    style.textContent = spinnerStyle;
+    document.head.appendChild(style);
+  }
+}
 
 interface OrderItem {
   id: number;
@@ -47,6 +67,7 @@ const Orders: React.FC = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [networkLoading, setNetworkLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
 
@@ -69,21 +90,56 @@ const Orders: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
+  }, [user?.id]); // Fetch on initial load
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchOrders(); // Use cache for status changes
+    }
   }, [selectedStatus]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (useCache: boolean = true) => {
+    if (!user?.id) return;
+
     try {
+      // Create cache key based on user and status filter
+      const cacheKey = CACHE_KEYS.USER_ORDERS(user.id, selectedStatus);
+      
+      if (useCache) {
+        const cached = cacheService.get(cacheKey);
+        if (cached) {
+          setOrders(Array.isArray(cached) ? cached : []);
+          setLoading(false);
+          setNetworkLoading(false);
+          return;
+        }
+      }
+
+      // Show loading states only for network requests
       setLoading(true);
+      setNetworkLoading(true);
+      
       const params = selectedStatus ? `?status=${selectedStatus}` : '';
       const response = await api.get(`/orders${params}`);
       const ordersData = response.data.data || response.data;
+      
       // Ensure ordersData is an array
-      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      const orders = Array.isArray(ordersData) ? ordersData : [];
+      
+      // Cache orders for 3 minutes (they change relatively frequently)
+      cacheService.set(cacheKey, orders, {
+        ttl: CACHE_TTL.SHORT * 1.5, // 3 minutes
+        useMemory: true,
+        useLocalStorage: true
+      });
+      
+      setOrders(orders);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch orders');
       setOrders([]); // Set empty array on error
     } finally {
       setLoading(false);
+      setNetworkLoading(false);
     }
   };
 
@@ -105,6 +161,31 @@ const Orders: React.FC = () => {
       setError('Failed to download invoice');
     }
   };
+
+  // Clear orders cache when component unmounts or user changes
+  useEffect(() => {
+    return () => {
+      // Optional: Clear cache on unmount to ensure fresh data on re-visit
+      // Uncomment if you want this behavior
+      // if (user?.id) {
+      //   cacheService.remove(CACHE_KEYS.USER_ORDERS(user.id, selectedStatus));
+      // }
+    };
+  }, [user?.id, selectedStatus]);
+
+  // Expose refresh function for external use (e.g., after checkout)
+  React.useEffect(() => {
+    const handleOrdersRefresh = () => {
+      if (user?.id) {
+        clearUserCaches(user.id);
+        fetchOrders(false);
+      }
+    };
+
+    // Listen for custom refresh event
+    window.addEventListener('refreshOrders', handleOrdersRefresh);
+    return () => window.removeEventListener('refreshOrders', handleOrdersRefresh);
+  }, [user?.id]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -144,10 +225,51 @@ const Orders: React.FC = () => {
         alignItems: 'center', 
         marginBottom: '30px' 
       }}>
-        <h1>My Orders</h1>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <h1 style={{ margin: 0 }}>My Orders</h1>
+          {networkLoading && (
+            <div style={{ 
+              marginLeft: '15px', 
+              padding: '5px 10px', 
+              backgroundColor: '#e8f5e8', 
+              borderRadius: '15px', 
+              fontSize: '12px',
+              color: '#2e7d2e',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}>
+              <span style={{ animation: 'spin 1s linear infinite' }}>🔄</span> 
+              Refreshing...
+            </div>
+          )}
+        </div>
         
-        <select
-          value={selectedStatus}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            onClick={() => {
+              if (user?.id) {
+                // Clear cache for current filter and refetch
+                cacheService.remove(CACHE_KEYS.USER_ORDERS(user.id, selectedStatus));
+                fetchOrders(false);
+              }
+            }}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+            disabled={networkLoading}
+          >
+            🔄 Refresh
+          </button>
+          
+          <select
+            value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
           style={{
             padding: '10px 15px',
@@ -165,6 +287,7 @@ const Orders: React.FC = () => {
           <option value="delivered">Delivered</option>
           <option value="cancelled">Cancelled</option>
         </select>
+        </div>
       </div>
 
       {error && (
@@ -180,7 +303,7 @@ const Orders: React.FC = () => {
         </div>
       )}
 
-      {orders.length === 0 ? (
+      {orders.length === 0 && !loading ? (
         <div style={{
           textAlign: 'center',
           padding: '60px 20px',
@@ -189,9 +312,30 @@ const Orders: React.FC = () => {
           color: '#666'
         }}>
           <h3>No orders found</h3>
-          <p>You haven't placed any orders yet.</p>
+          <p>
+            {selectedStatus 
+              ? `No orders with status "${selectedStatus}" found.` 
+              : "You haven't placed any orders yet."
+            }
+          </p>
+          {selectedStatus && (
+            <button
+              onClick={() => setSelectedStatus('')}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                marginTop: '10px'
+              }}
+            >
+              View All Orders
+            </button>
+          )}
         </div>
-      ) : (
+      ) : orders.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {orders.map((order) => (
             <div
@@ -442,7 +586,7 @@ const Orders: React.FC = () => {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

@@ -3,6 +3,22 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { cacheService, CACHE_KEYS, CACHE_TTL } from '../services/cache';
+
+// Add CSS for spinner animation
+const spinnerStyle = `
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`;
+
+// Inject the CSS
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = spinnerStyle;
+  document.head.appendChild(style);
+}
 
 interface Product {
   id: number;
@@ -64,7 +80,9 @@ const Products: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [networkLoading, setNetworkLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [error, setError] = useState('');
@@ -78,25 +96,58 @@ const Products: React.FC = () => {
   });
   const [perPage, setPerPage] = useState(12);
 
+  // Debounce search term to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   useEffect(() => {
     fetchProducts(1);
     fetchCategories();
   }, []);
 
   useEffect(() => {
-    fetchProducts(1);
-  }, [searchTerm, selectedCategory, sortBy, perPage]);
+    fetchProducts(1, true); // Allow caching for different filter combinations
+  }, [debouncedSearchTerm, selectedCategory, sortBy, perPage]);
 
-  const fetchProducts = async (page: number = 1) => {
+  const fetchProducts = async (page: number = 1, useCache: boolean = true) => {
     try {
+      // Create cache key based on filters
+      const cacheKey = CACHE_KEYS.PRODUCTS(page, debouncedSearchTerm, selectedCategory, sortBy);
+      
+      if (useCache) {
+        const cached = cacheService.get(cacheKey);
+        if (cached) {
+          setProducts(cached.data);
+          setPagination({
+            current_page: cached.current_page,
+            last_page: cached.last_page,
+            per_page: cached.per_page,
+            total: cached.total,
+            from: cached.from,
+            to: cached.to
+          });
+          setLoading(false);
+          setNetworkLoading(false);
+          return;
+        }
+      }
+
+      // Only show loading states if we're making a network request
       setLoading(true);
+      setNetworkLoading(true);
+
       const params = new URLSearchParams({
         page: page.toString(),
         per_page: perPage.toString(),
       });
 
-      if (searchTerm) {
-        params.append('search', searchTerm);
+      if (debouncedSearchTerm) {
+        params.append('search', debouncedSearchTerm);
       }
       if (selectedCategory) {
         params.append('category', selectedCategory);
@@ -112,6 +163,13 @@ const Products: React.FC = () => {
       const response = await axios.get(`http://localhost:8000/api/products?${params}`);
       const data: ProductsResponse = response.data;
       
+      // Cache the response for 5 minutes
+      cacheService.set(cacheKey, data, {
+        ttl: CACHE_TTL.MEDIUM,
+        useMemory: true,
+        useLocalStorage: true
+      });
+      
       setProducts(data.data);
       setPagination({
         current_page: data.current_page,
@@ -122,16 +180,34 @@ const Products: React.FC = () => {
         to: data.to
       });
       setLoading(false);
+      setNetworkLoading(false);
     } catch (err) {
       setError('Failed to fetch products');
       setLoading(false);
+      setNetworkLoading(false);
     }
   };
 
   const fetchCategories = async () => {
     try {
+      // Try cache first
+      const cached = cacheService.get(CACHE_KEYS.CATEGORIES);
+      if (cached) {
+        setCategories(cached);
+        return;
+      }
+
       const response = await axios.get('http://localhost:8000/api/categories');
-      setCategories(response.data.data || response.data);
+      const data = response.data.data || response.data;
+      
+      // Cache categories for 15 minutes (they change rarely)
+      cacheService.set(CACHE_KEYS.CATEGORIES, data, {
+        ttl: CACHE_TTL.LONG,
+        useMemory: true,
+        useLocalStorage: true
+      });
+      
+      setCategories(data);
     } catch (err) {
       console.error('Failed to fetch categories');
     }
@@ -243,7 +319,25 @@ const Products: React.FC = () => {
 
   return (
     <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '30px' }}>Our Products</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '30px' }}>
+        <h1 style={{ margin: 0 }}>Our Products</h1>
+        {networkLoading && (
+          <div style={{ 
+            marginLeft: '15px', 
+            padding: '5px 10px', 
+            backgroundColor: '#e3f2fd', 
+            borderRadius: '15px', 
+            fontSize: '12px',
+            color: '#1976d2',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}>
+            <span style={{ animation: 'spin 1s linear infinite' }}>🔄</span> 
+            Updating...
+          </div>
+        )}
+      </div>
       
       {/* Filters */}
       <div style={{ 

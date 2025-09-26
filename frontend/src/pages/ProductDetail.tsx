@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { cacheService, CACHE_KEYS, CACHE_TTL } from '../services/cache';
 
 interface Product {
   id: number;
@@ -53,8 +54,26 @@ const ProductDetail: React.FC = () => {
 
   const fetchProduct = async (productId: string) => {
     try {
+      // Try cache first
+      const cacheKey = CACHE_KEYS.PRODUCT_DETAIL(productId);
+      const cached = cacheService.get(cacheKey);
+      if (cached) {
+        setProduct(cached);
+        setLoading(false);
+        return;
+      }
+
       const response = await api.get(`/products/${productId}`);
-      setProduct(response.data);
+      const data = response.data;
+      
+      // Cache product detail for 10 minutes
+      cacheService.set(cacheKey, data, {
+        ttl: CACHE_TTL.MEDIUM * 2, // 10 minutes
+        useMemory: true,
+        useLocalStorage: true
+      });
+      
+      setProduct(data);
       setLoading(false);
     } catch (err) {
       setError('Product not found');

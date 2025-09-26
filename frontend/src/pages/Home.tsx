@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { productService, categoryService } from '../services/products';
 import { Product, Category } from '../types';
+import { cacheService, CACHE_KEYS, CACHE_TTL } from '../services/cache';
 import './Home.css';
 
 const Home: React.FC = () => {
@@ -15,15 +16,50 @@ const Home: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch featured products
-        const productsResponse = await productService.getProducts({ 
-          featured: true
-        });
-        setFeaturedProducts(productsResponse.data.slice(0, 6)); // Get first 6 featured products
+        // Try cache first
+        const cachedFeatured = cacheService.get(CACHE_KEYS.FEATURED_PRODUCTS);
+        const cachedCategories = cacheService.get(CACHE_KEYS.CATEGORIES);
 
-        // Fetch categories
-        const categoriesResponse = await categoryService.getCategories();
-        setCategories(categoriesResponse.slice(0, 6)); // Show first 6 categories
+        if (cachedFeatured && cachedCategories) {
+          setFeaturedProducts(cachedFeatured);
+          setCategories(cachedCategories);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch featured products if not cached
+        if (!cachedFeatured) {
+          const productsResponse = await productService.getProducts({ 
+            featured: true
+          });
+          const featuredData = productsResponse.data.slice(0, 6);
+          setFeaturedProducts(featuredData);
+          
+          // Cache for 10 minutes
+          cacheService.set(CACHE_KEYS.FEATURED_PRODUCTS, featuredData, {
+            ttl: CACHE_TTL.MEDIUM * 2,
+            useMemory: true,
+            useLocalStorage: true
+          });
+        } else {
+          setFeaturedProducts(cachedFeatured);
+        }
+
+        // Fetch categories if not cached
+        if (!cachedCategories) {
+          const categoriesResponse = await categoryService.getCategories();
+          const categoriesData = categoriesResponse.slice(0, 6);
+          setCategories(categoriesData);
+          
+          // Cache categories for 15 minutes
+          cacheService.set(CACHE_KEYS.CATEGORIES, categoriesData, {
+            ttl: CACHE_TTL.LONG,
+            useMemory: true,
+            useLocalStorage: true
+          });
+        } else {
+          setCategories(cachedCategories);
+        }
 
         setLoading(false);
       } catch (err) {
